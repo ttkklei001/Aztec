@@ -41,8 +41,13 @@ function install_dependencies() {
 
 function install_aztec() {
   clear
-  echo -e "\n[2/4] 安装 Aztec 工具..."
-  bash -i <(curl -s https://install.aztec.network)
+  echo -e "\n[2/4] 检查并安装 Aztec 工具..."
+  if ! command -v aztec &>/dev/null; then
+    echo "安装 Aztec 工具..."
+    bash -i <(curl -s https://install.aztec.network)
+  else
+    echo "Aztec 工具已安装，跳过。"
+  fi
 }
 
 function run_sequencer() {
