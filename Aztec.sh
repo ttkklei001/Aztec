@@ -49,8 +49,11 @@ function run_sequencer() {
   clear
   echo -e "\n[3/4] 配置并启动 Aztec Sequencer...\n"
 
+  # 分开显示私钥和公钥的输入提示
   read -p "请输入您的以太坊私钥（0x开头）: " VALIDATOR_PRIVATE_KEY
+  echo ""  # 分行显示
   read -p "请输入您的公钥地址（0x开头）: " VALIDATOR_ADDRESS
+  echo ""  # 分行显示
   read -p "请输入您的 L1 RPC 地址: " L1_RPC
   read -p "请输入您的 L1 共识客户端地址（如 dRPC）: " L1_CONSENSUS_RPC
   PUBLIC_IP=$(curl -s ifconfig.me)
