@@ -6,7 +6,6 @@
 # 清除屏幕
 clear
 
-# 安装依赖项
 function install_dependencies() {
   clear
   echo -e "\n[1/4] 正在检查并安装依赖项...\n"
@@ -40,19 +39,12 @@ function install_dependencies() {
   fi
 }
 
-# 安装 Aztec 工具
 function install_aztec() {
   clear
-  echo -e "\n[2/4] 检查并安装 Aztec 工具..."
-  if ! command -v aztec &>/dev/null; then
-    echo "安装 Aztec 工具..."
-    bash -i <(curl -s https://install.aztec.network)
-  else
-    echo "Aztec 工具已安装，跳过。"
-  fi
+  echo -e "\n[2/4] 安装 Aztec 工具..."
+  bash -i <(curl -s https://install.aztec.network)
 }
 
-# 启动 Sequencer 节点
 function run_sequencer() {
   clear
   echo -e "\n[3/4] 配置并启动 Aztec Sequencer...\n"
@@ -60,9 +52,7 @@ function run_sequencer() {
   read -p "请输入您的以太坊私钥（0x开头）: " VALIDATOR_PRIVATE_KEY
   read -p "请输入您的公钥地址（0x开头）: " VALIDATOR_ADDRESS
   read -p "请输入您的 L1 RPC 地址: " L1_RPC
-  # 使用 dRPC 提供的公共 Sepolia RPC 地址
-  L1_CONSENSUS_RPC="https://rpc.sepolia.drpc.org"
-  echo "使用的 L1 共识客户端地址: $L1_CONSENSUS_RPC"
+  read -p "请输入您的 L1 共识客户端地址（如 dRPC）: " L1_CONSENSUS_RPC
   PUBLIC_IP=$(curl -s ifconfig.me)
   echo "检测到公网 IP 为：$PUBLIC_IP"
 
@@ -81,49 +71,12 @@ function run_sequencer() {
   echo -e "\n✅ Sequencer 节点已启动，请确保端口 40400 UDP/TCP 已开放。"
 }
 
-# 重启 Sequencer 节点
-function restart_sequencer() {
-  clear
-  echo -e "\n[重启] 正在重启 Aztec Sequencer 节点...\n"
-
-  # 删除已有的容器
-  docker stop aztec-sequencer && docker rm aztec-sequencer
-  echo "已删除原有的容器。"
-
-  # 重新输入配置
-  read -p "请输入您的以太坊私钥（0x开头）: " VALIDATOR_PRIVATE_KEY
-  read -p "请输入您的公钥地址（0x开头）: " VALIDATOR_ADDRESS
-  read -p "请输入您的 L1 RPC 地址: " L1_RPC
-  # 使用 dRPC 提供的公共 Sepolia RPC 地址
-  L1_CONSENSUS_RPC="https://rpc.sepolia.drpc.org"
-  echo "使用的 L1 共识客户端地址: $L1_CONSENSUS_RPC"
-  PUBLIC_IP=$(curl -s ifconfig.me)
-  echo "检测到公网 IP 为：$PUBLIC_IP"
-
-  # 启动新的容器
-  docker run -d \
-    --name aztec-sequencer \
-    --restart unless-stopped \
-    -e ETHEREUM_HOSTS="$L1_RPC" \
-    -e L1_CONSENSUS_HOST_URLS="$L1_CONSENSUS_RPC" \
-    -e VALIDATOR_PRIVATE_KEY="$VALIDATOR_PRIVATE_KEY" \
-    -e P2P_IP="$PUBLIC_IP" \
-    -p 40400:40400/tcp -p 40400:40400/udp -p 8080:8080 \
-    aztecprotocol/aztec:0.85.0-alpha-testnet.5 \
-    sh -c "node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start \
-      --network alpha-testnet --node --archiver --sequencer --sequencer.coinbase=$VALIDATOR_ADDRESS --sequencer.validatorPrivateKey=$VALIDATOR_PRIVATE_KEY --p2p.p2pIp=$PUBLIC_IP"
-
-  echo -e "\n✅ Sequencer 节点已重新启动，请确保端口 40400 UDP/TCP 已开放。"
-}
-
-# 查看日志
 function show_logs() {
   clear
   echo -e "\n[日志] 正在实时输出 sequencer 日志...\n"
   docker logs -f aztec-sequencer
 }
 
-# 卸载节点
 function uninstall_node() {
   clear
   echo -e "\n[卸载] 正在停止并删除节点容器..."
@@ -131,7 +84,6 @@ function uninstall_node() {
   echo "已卸载节点（数据保留在 docker 卷中）。"
 }
 
-# 注册为验证者
 function register_validator() {
   clear
   echo -e "\n[4/4] 注册为验证者\n"
@@ -153,7 +105,7 @@ function register_validator() {
     --private-key "$L1_PRIVATE_KEY" \
     --attester "$VALIDATOR_ADDRESS" \
     --proposer-eoa "$VALIDATOR_ADDRESS" \
-    --staking-asset-handler 0xF739D03e98e23A7B659408aBA8921fF3bAc4b2 \
+    --staking-asset-handler 0xF739D03e98e23A7B65940848aBA8921fF3bAc4b2 \
     --l1-chain-id 11155111
 
   echo -e "\n✅ 验证者注册命令已执行。请确认链上是否成功注册。"
@@ -205,10 +157,9 @@ function main_menu() {
     echo "3. 卸载 Sequencer 节点"
     echo "4. 注册为验证者（需节点已同步）"
     echo "5. 获取同步证明"
-    echo "6. 重启 Sequencer 节点"
-    echo "7. 退出"
+    echo "6. 退出"
     echo "==============================================="
-    read -p "请输入选项 [1-7]: " CHOICE
+    read -p "请输入选项 [1-6]: " CHOICE
     case $CHOICE in
       1)
         install_dependencies
@@ -233,18 +184,15 @@ function main_menu() {
         read -n 1 -s -r -p "按任意键返回主菜单..."
         ;;
       6)
-        restart_sequencer
-        read -n 1 -s -r -p "按任意键返回主菜单..."
-        ;;
-      7)
+        echo "退出脚本。"
         exit 0
         ;;
       *)
-        echo "无效选择，请重新输入"
+        echo "无效输入，请重新选择。"
+        sleep 1
         ;;
     esac
   done
 }
 
-# 调用主菜单
 main_menu
