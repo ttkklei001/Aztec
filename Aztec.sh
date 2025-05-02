@@ -6,6 +6,7 @@
 # 清除屏幕
 clear
 
+# 安装依赖项
 function install_dependencies() {
   clear
   echo -e "\n[1/4] 正在检查并安装依赖项...\n"
@@ -39,6 +40,7 @@ function install_dependencies() {
   fi
 }
 
+# 安装 Aztec 工具
 function install_aztec() {
   clear
   echo -e "\n[2/4] 检查并安装 Aztec 工具..."
@@ -50,6 +52,7 @@ function install_aztec() {
   fi
 }
 
+# 启动 Sequencer 节点
 function run_sequencer() {
   clear
   echo -e "\n[3/4] 配置并启动 Aztec Sequencer...\n"
@@ -76,12 +79,14 @@ function run_sequencer() {
   echo -e "\n✅ Sequencer 节点已启动，请确保端口 40400 UDP/TCP 已开放。"
 }
 
+# 查看日志
 function show_logs() {
   clear
   echo -e "\n[日志] 正在实时输出 sequencer 日志...\n"
   docker logs -f aztec-sequencer
 }
 
+# 卸载节点
 function uninstall_node() {
   clear
   echo -e "\n[卸载] 正在停止并删除节点容器..."
@@ -89,6 +94,7 @@ function uninstall_node() {
   echo "已卸载节点（数据保留在 docker 卷中）。"
 }
 
+# 注册为验证者
 function register_validator() {
   clear
   echo -e "\n[4/4] 注册为验证者\n"
@@ -110,10 +116,42 @@ function register_validator() {
     --private-key "$L1_PRIVATE_KEY" \
     --attester "$VALIDATOR_ADDRESS" \
     --proposer-eoa "$VALIDATOR_ADDRESS" \
-    --staking-asset-handler 0xF739D03e98e23A7B65940848aBA8921fF3bAc4b2 \
+    --staking-asset-handler 0xF739D03e98e23A7B659408aBA8921fF3bAc4b2 \
     --l1-chain-id 11155111
 
   echo -e "\n✅ 验证者注册命令已执行。请确认链上是否成功注册。"
+}
+
+# 获取同步证明
+function get_sync_proof() {
+  clear
+  echo -e "\n[同步证明] 获取最新已证明区块和证明...\n"
+
+  block=$(curl -s -X POST -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","method":"node_getL2Tips","params":[],"id":67}' \
+  127.0.0.1:8080 | jq -r ".result.proven.number")
+
+  echo -e "\n✅ 最新已证明区块号: $block"
+
+  proof=$(curl -s -X POST -H 'Content-Type: application/json' \
+  -d "{\"jsonrpc\":\"2.0\",\"method\":\"node_getArchiveSiblingPath\",\"params\":[\"$block\",\"$block\"],\"id\":67}" \
+  127.0.0.1:8080 | jq -r ".result")
+
+  if [ "$proof" = "null" ] || [ -z "$proof" ]; then
+    echo -e "\n⚠️ 该区块未找到有效证明，请稍后重试或检查节点同步状态。"
+  else
+    echo -e "\n✅ 证明数据如下："
+    echo "$proof"
+
+    echo ""
+    read -p "请输入您的验证者钱包地址: " wallet
+
+    echo -e "\n📋 请复制以下指令发送到 Discord 验证频道：\n"
+    echo "/operator start"
+    echo "地址: $wallet"
+    echo "区块: $block"
+    echo "证明: $proof"
+  fi
 }
 
 # 修改菜单选项
@@ -129,9 +167,10 @@ function main_menu() {
     echo "2. 查看节点日志"
     echo "3. 卸载 Sequencer 节点"
     echo "4. 注册为验证者（需节点已同步）"
-    echo "5. 退出"
+    echo "5. 获取同步证明"
+    echo "6. 退出"
     echo "==============================================="
-    read -p "请输入选项 [1-5]: " CHOICE
+    read -p "请输入选项 [1-6]: " CHOICE
     case $CHOICE in
       1)
         install_dependencies
@@ -152,6 +191,10 @@ function main_menu() {
         read -n 1 -s -r -p "按任意键返回主菜单..."
         ;;
       5)
+        get_sync_proof
+        read -n 1 -s -r -p "按任意键返回主菜单..."
+        ;;
+      6)
         echo "退出脚本。"
         exit 0
         ;;
