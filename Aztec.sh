@@ -6,6 +6,7 @@
 # 清除屏幕
 clear
 
+# 安装依赖项
 function install_dependencies() {
   clear
   echo -e "\n[1/4] 正在检查并安装依赖项...\n"
@@ -39,21 +40,25 @@ function install_dependencies() {
   fi
 }
 
+# 安装 Aztec 工具
 function install_aztec() {
   clear
-  echo -e "\n[2/4] 安装 Aztec 工具..."
-  bash -i <(curl -s https://install.aztec.network)
+  echo -e "\n[2/4] 检查并安装 Aztec 工具..."
+  if ! command -v aztec &>/dev/null; then
+    echo "安装 Aztec 工具..."
+    bash -i <(curl -s https://install.aztec.network)
+  else
+    echo "Aztec 工具已安装，跳过。"
+  fi
 }
 
+# 启动 Sequencer 节点
 function run_sequencer() {
   clear
   echo -e "\n[3/4] 配置并启动 Aztec Sequencer...\n"
 
-  # 分开显示私钥和公钥的输入提示
   read -p "请输入您的以太坊私钥（0x开头）: " VALIDATOR_PRIVATE_KEY
-  echo ""  # 分行显示
   read -p "请输入您的公钥地址（0x开头）: " VALIDATOR_ADDRESS
-  echo ""  # 分行显示
   read -p "请输入您的 L1 RPC 地址: " L1_RPC
   read -p "请输入您的 L1 共识客户端地址（如 dRPC）: " L1_CONSENSUS_RPC
   PUBLIC_IP=$(curl -s ifconfig.me)
@@ -74,12 +79,14 @@ function run_sequencer() {
   echo -e "\n✅ Sequencer 节点已启动，请确保端口 40400 UDP/TCP 已开放。"
 }
 
+# 查看日志
 function show_logs() {
   clear
   echo -e "\n[日志] 正在实时输出 sequencer 日志...\n"
   docker logs -f aztec-sequencer
 }
 
+# 卸载节点
 function uninstall_node() {
   clear
   echo -e "\n[卸载] 正在停止并删除节点容器..."
@@ -87,6 +94,15 @@ function uninstall_node() {
   echo "已卸载节点（数据保留在 docker 卷中）。"
 }
 
+# 重启节点
+function restart_node() {
+  clear
+  echo -e "\n[重启] 正在重启 Aztec Sequencer 节点...\n"
+  docker restart aztec-sequencer
+  echo -e "\n✅ 节点已重启。"
+}
+
+# 注册为验证者
 function register_validator() {
   clear
   echo -e "\n[4/4] 注册为验证者\n"
@@ -108,7 +124,7 @@ function register_validator() {
     --private-key "$L1_PRIVATE_KEY" \
     --attester "$VALIDATOR_ADDRESS" \
     --proposer-eoa "$VALIDATOR_ADDRESS" \
-    --staking-asset-handler 0xF739D03e98e23A7B65940848aBA8921fF3bAc4b2 \
+    --staking-asset-handler 0xF739D03e98e23A7B659408aBA8921fF3bAc4b2 \
     --l1-chain-id 11155111
 
   echo -e "\n✅ 验证者注册命令已执行。请确认链上是否成功注册。"
@@ -160,9 +176,10 @@ function main_menu() {
     echo "3. 卸载 Sequencer 节点"
     echo "4. 注册为验证者（需节点已同步）"
     echo "5. 获取同步证明"
-    echo "6. 退出"
+    echo "6. 重启节点"
+    echo "7. 退出"
     echo "==============================================="
-    read -p "请输入选项 [1-6]: " CHOICE
+    read -p "请输入选项 [1-7]: " CHOICE
     case $CHOICE in
       1)
         install_dependencies
@@ -187,6 +204,10 @@ function main_menu() {
         read -n 1 -s -r -p "按任意键返回主菜单..."
         ;;
       6)
+        restart_node
+        read -n 1 -s -r -p "按任意键返回主菜单..."
+        ;;
+      7)
         echo "退出脚本。"
         exit 0
         ;;
