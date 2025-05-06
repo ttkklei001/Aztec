@@ -112,7 +112,7 @@ function register_validator() {
     --private-key "$L1_PRIVATE_KEY" \
     --attester "$VALIDATOR_ADDRESS" \
     --proposer-eoa "$VALIDATOR_ADDRESS" \
-    --staking-asset-handler 0xF739D03e98e23A7B659408aBA8921fF3bAc4b2 \
+    --staking-asset-handler 0xb82381a3fbd3fafa77b3a7be693342618240067b \
     --l1-chain-id 11155111
 
   echo -e "\n✅ 注册命令已执行，请检查链上状态确认是否成功。"
