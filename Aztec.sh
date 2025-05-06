@@ -107,15 +107,19 @@ function register_validator() {
   read -p "请输入钱包地址: " VALIDATOR_ADDRESS
   read -p "请输入 L1 RPC 地址: " L1_RPC
 
+  # 更新 staking-asset-handler 地址
+  STAKING_ASSET_HANDLER="0xb82381a3fbd3fafa77b3a7be693342618240067b"
+
   aztec add-l1-validator \
     --l1-rpc-urls "$L1_RPC" \
     --private-key "$L1_PRIVATE_KEY" \
     --attester "$VALIDATOR_ADDRESS" \
     --proposer-eoa "$VALIDATOR_ADDRESS" \
-    --staking-asset-handler 0xb82381a3fbd3fafa77b3a7be693342618240067b \
+    --staking-asset-handler "$STAKING_ASSET_HANDLER" \
     --l1-chain-id 11155111
 
-  echo -e "\n✅ 注册命令已执行，请检查链上状态确认是否成功。"
+  echo -e "\n✅ 注册命令已执行。请检查链上状态确认是否成功。"
+  echo -e "请访问 Sepolia 测试网查看您的验证者状态：\nhttps://sepolia.etherscan.io/address/$VALIDATOR_ADDRESS"
 }
 
 function main_menu() {
