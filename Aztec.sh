@@ -122,7 +122,7 @@ function register_validator() {
   read -p "请输入钱包地址: " VALIDATOR_ADDRESS
   read -p "请输入 L1 RPC 地址: " L1_RPC
 
-  STAKING_ASSET_HANDLER="0xb82381a3fbd3fafa77b3a7be693342618240067b"
+  STAKING_ASSET_HANDLER="0xF739D03e98e23A7B65940848aBA8921fF3bAc4b2"
 
   export PATH="$HOME/.aztec/bin:$PATH"
   aztec add-l1-validator \
